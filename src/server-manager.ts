@@ -9,10 +9,13 @@
 import { expandHome } from './util.js'
 import { McpStdioClient, McpStdioError, type McpToolResult } from './mcp-stdio.js'
 import type { NoemaMemorySettings } from './settings.js'
+import type { NoemaScope } from './scope.js'
 import { BUNDLED_NOEMA_COMMAND, resolveBundledNoemaBinary } from './bundled-binary.js'
 
 export interface NoemaServerCallOptions {
   signal?: AbortSignal
+  /** Execution-owned isolation scope resolved by the tool boundary. */
+  scope?: NoemaScope
 }
 
 export interface NoemaServerStatus {
@@ -171,7 +174,11 @@ export class NoemaServerManager {
     }
     const config = this.resolveConfig()
     try {
-      const result = await client.callTool(name, args, { timeoutMs: config.callTimeoutMs, signal: options.signal })
+      const result = await client.callTool(name, args, {
+        timeoutMs: config.callTimeoutMs,
+        signal: options.signal,
+        ...(options.scope === undefined ? {} : { scope: options.scope }),
+      })
       this.armIdle(config)
       return result
     } catch (error) {

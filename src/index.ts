@@ -36,6 +36,7 @@ export { DSH_NOEMA_VERSION } from './version.js'
 export { NoemaServerManager, resolveNoemaLaunch, tokenizeCommand, type NoemaServerStatus } from './server-manager.js'
 export { BUNDLED_NOEMA_COMMAND, NOEMA_PLATFORM_PACKAGES, bundledNoemaCandidates, noemaPlatformKey, noemaPlatformPackage, resolveBundledNoemaBinary, tryResolveBundledNoemaBinary } from './bundled-binary.js'
 export { createNoemaTools, type NoemaToolResult } from './tools.js'
+export { MEMORY_SCOPE_ARG, resolveNoemaScope, stripModelScope, type NoemaScope, type ScopeExecContext } from './scope.js'
 export { noemaGuidanceText } from './guidance.js'
 export { registerNoemaStatusRoute } from './status-route.js'
 

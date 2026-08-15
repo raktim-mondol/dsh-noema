@@ -12,6 +12,7 @@ import type { ToolCallView } from '@deepseek-ai/dsh-tools'
 import type { NoemaServerManager } from './server-manager.js'
 import type { MemoryImportService } from './import-service.js'
 import type { NoemaMemorySettings } from './settings.js'
+import { resolveNoemaScope, stripModelScope, type ScopeExecContext } from './scope.js'
 import { NOEMA_TOOL_NAMES } from './names.js'
 
 /** Canonical envelope returned by every Noema tool. */
@@ -242,8 +243,13 @@ function createNoemaTool(
         })
         return { ok: true, tool: spec.name, text: JSON.stringify(summary, null, 2) }
       }
-      const built = spec.buildArgs === undefined ? { ...args } : spec.buildArgs(args, config)
-      const result = await manager.call(spec.name, built, { signal: exec.signal })
+      // Isolation scope is execution-owned: resolved from the host context
+      // (agent/session/settings), never from tool arguments. Any model-supplied
+      // scope claim is stripped before the call proceeds.
+      const cleaned = stripModelScope(args)
+      const scope = resolveNoemaScope(exec as ScopeExecContext, config)
+      const built = spec.buildArgs === undefined ? { ...cleaned } : spec.buildArgs(cleaned, config)
+      const result = await manager.call(spec.name, built, { signal: exec.signal, scope })
       return { ok: true, tool: spec.name, text: resultText(spec.name, result.text) }
     },
     presentCall: (args: Record<string, unknown>): ToolCallView | undefined => {
