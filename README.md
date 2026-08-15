@@ -126,6 +126,19 @@ The model-facing tools mirror the Noema MCP surface:
 
 Each tool returns a uniform envelope `{ ok, tool, text }` where `text` carries the full server output.
 
+## Isolation scope
+
+The isolation identity for every memory call is **execution-owned**: the model chooses query, note, and recall intent (the tool arguments); the host chooses tenant, principal, agent, workspace, and session. Scope is resolved from the tool execution context (the calling agent, its session header, and settings) and attached to every provider call on the `tools/call` envelope under `memory_scope`, never inside the tool's argument object — a model (or a prompt injection) cannot search or write another tenant's namespace by passing tool arguments, and any model-supplied `memory_scope` claim is stripped before the call proceeds.
+
+| Scope field | Source | Override |
+| --- | --- | --- |
+| `tenant` | host settings | Tenant setting (default `personal`) |
+| `principal` | calling agent/session identity | Principal setting |
+| `agent` / `session` | the agent the call runs for | — |
+| `workspace` | session working directory | — |
+
+Noema's stdio server currently routes storage by its process configuration (`$NOEMA_ROOT/config.toml`), so per-call scope is carried on the envelope as the provider-neutral contract seam: providers that understand scope consume it, and the rest ignore it while every call still records the full execution identity for audit.
+
 ## Import memories from other tools
 
 | Source id | Global files | Workspace files |
@@ -164,6 +177,8 @@ Open **Settings → Noema Memory**:
 | Keep-alive interval (ms) | 5000 | Minimum delay between background health checks. |
 | Call timeout (ms) | 30000 | Per-tool-call deadline. |
 | Restart delay (ms) | 1000 | Backoff between a stop/crash and the next start. |
+| Tenant | — | Isolation-scope tenant override; empty derives it from the host context (`personal`). |
+| Principal | — | Isolation-scope principal override; empty derives it from the calling agent/session. |
 
 The status card shows server health with restart/stop actions, and the import section manages the nine memory sources.
 

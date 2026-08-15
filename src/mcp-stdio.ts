@@ -8,6 +8,7 @@
  */
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { DSH_NOEMA_VERSION } from './version.js'
+import { MEMORY_SCOPE_ARG, type NoemaScope } from './scope.js'
 
 /** Bounded protocol envelope sizes, generous for full catalogs. */
 export const MAX_MCP_MESSAGE_BYTES = 8 * 1024 * 1024
@@ -122,15 +123,25 @@ export class McpStdioClient {
     this.startedAt = Date.now()
   }
 
-  /** Call one MCP tool and return its joined text content. */
-  async callTool(name: string, args: Record<string, unknown>, options: { timeoutMs: number; signal?: AbortSignal }): Promise<McpToolResult> {
+  /**
+   * Call one MCP tool and return its joined text content.
+   *
+   * The execution-owned isolation `scope` travels on the `tools/call`
+   * envelope beside `name`/`arguments`, never inside the tool's argument
+   * object — model-chosen arguments cannot smuggle a scope override past the
+   * host. Providers that understand scope consume the envelope key; the rest
+   * ignore it while the seam still carries the full identity.
+   */
+  async callTool(name: string, args: Record<string, unknown>, options: { timeoutMs: number; signal?: AbortSignal; scope?: NoemaScope }): Promise<McpToolResult> {
     if (this.child === undefined || this.state !== 'running') {
       throw new McpStdioError('Noema memory server is not running; start it or check the memory settings')
     }
     if (options.signal?.aborted === true) {
       throw new McpStdioError('call aborted', { cause: options.signal.reason })
     }
-    const response = await this.request('tools/call', { name, arguments: args ?? {} }, options.timeoutMs, options.signal)
+    const params: Record<string, unknown> = { name, arguments: args ?? {} }
+    if (options.scope !== undefined) params[MEMORY_SCOPE_ARG] = options.scope
+    const response = await this.request('tools/call', params, options.timeoutMs, options.signal)
     if (!isRecord(response)) {
       throw new McpStdioError('Noema MCP ' + name + ' returned an invalid response')
     }

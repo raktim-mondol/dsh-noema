@@ -40,6 +40,17 @@ export interface NoemaMemorySettings {
   acceptByDefault: boolean
   /** Include the memory-usage guidance section in the system prompt. */
   guidance: boolean
+  /**
+   * Tenant namespace override for the execution scope. Empty derives the
+   * tenant from the host context. Host-owned: never accepted from model args.
+   */
+  tenant: string
+  /**
+   * Principal override within the tenant. Empty derives the principal from
+   * the calling agent/session identity. Host-owned: never accepted from
+   * model args.
+   */
+  principal: string
   /** Master switch for the foreign-agent memory import feature. */
   importEnabled: boolean
   /** Run an import pass automatically when the plugin mounts. */
@@ -67,6 +78,8 @@ export const NOEMA_MEMORY_SETTINGS_DEFAULTS: NoemaMemorySettings = {
   recallBudgetTokens: 1_200,
   acceptByDefault: true,
   guidance: true,
+  tenant: '',
+  principal: '',
   importEnabled: true,
   importOnStartup: false,
   importWorkspaceFiles: true,
@@ -92,6 +105,8 @@ export const NOEMA_MEMORY_SETTINGS_SCHEMA = z.object({
   recallBudgetTokens: z.number().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.recallBudgetTokens),
   acceptByDefault: z.boolean().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.acceptByDefault),
   guidance: z.boolean().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.guidance),
+  tenant: z.string().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.tenant),
+  principal: z.string().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.principal),
   importEnabled: z.boolean().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.importEnabled),
   importOnStartup: z.boolean().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.importOnStartup),
   importWorkspaceFiles: z.boolean().default(NOEMA_MEMORY_SETTINGS_DEFAULTS.importWorkspaceFiles),
